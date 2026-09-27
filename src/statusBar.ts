@@ -141,7 +141,7 @@ export class StatusBarManager {
       const marker = currentContext.estimated ? '~' : '';
       lines.push(
         currentContext.title
-          ? `**Current context** (${currentContext.label})\n- ${currentContext.title}: ${marker}${used.toFixed(1)}% used, ${marker}${(100 - used).toFixed(1)}% available`
+          ? `**Current context** (${currentContext.label})\n- ${currentContext.title}: ${marker}${used.toFixed(1)}% used, ${marker}${(100 - used).toFixed(1)}% remaining`
           : `**Current context** (${currentContext.label})\n- ${marker}${used.toFixed(1)}% used, ${marker}${(100 - used).toFixed(1)}% available`,
         currentContext.contextTokens !== undefined && currentContext.contextWindowSize !== undefined
           ? `- ${currentContext.contextTokens.toLocaleString()} / ${currentContext.contextWindowSize.toLocaleString()} tokens in context`
@@ -262,7 +262,7 @@ export function formatContextStatus(
 
   const used = displayPercent(context.contextPercent, false);
   const displayed = displayPercent(context.contextPercent);
-  const circlePercent = Math.round(used / 5) * 5;
+  const circlePercent = 100 - Math.round(used / 5) * 5;
   return showCircle ? `$(claude-context-${circlePercent})` : `${displayed.toFixed(0)}%`;
 }
 
