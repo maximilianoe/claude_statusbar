@@ -3,6 +3,7 @@ import { SessionMetrics, PlanConfig } from './types';
 import { formatTimeRemaining } from './sessionCalculator';
 import { formatCost } from './pricing';
 import { budgetPercent } from './plans';
+import { clampPercent, displayPercent } from './percentage';
 
 /**
  * Manages the status bar item showing session information.
@@ -44,12 +45,7 @@ export class StatusBarManager {
     const parts: string[] = [`Reset: ${timeRemaining}`];
 
     const config = vscode.workspace.getConfiguration('claudeStatusBar');
-    const showRemainingPercentage = config.get<boolean>('showRemainingPercentage', false);
-    const showContextAsCircle = config.get<boolean>('showContextAsCircle', false);
-    const displayPercent = (usedPercent: number) => {
-      const used = clampPercent(usedPercent);
-      return showRemainingPercentage ? 100 - used : used;
-    };
+        const showContextAsCircle = config.get<boolean>('showContextAsCircle', false);
     if (config.get<boolean>('showContextInStatusBar', false)) {
       const contextStatus = formatContextStatus(session.sessionContexts, showContextAsCircle);
       if (contextStatus) {
