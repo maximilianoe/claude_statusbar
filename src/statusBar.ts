@@ -44,7 +44,12 @@ export class StatusBarManager {
     const parts: string[] = [`Reset: ${timeRemaining}`];
 
     const config = vscode.workspace.getConfiguration('claudeStatusBar');
+    const showAvailablePercentage = config.get<boolean>('showAvailablePercentage', false);
     const showContextAsCircle = config.get<boolean>('showContextAsCircle', false);
+    const displayPercent = (usedPercent: number) => {
+      const used = clampPercent(usedPercent);
+      return showAvailablePercentage ? 100 - used : used;
+    };
     if (config.get<boolean>('showContextInStatusBar', false)) {
       const contextStatus = formatContextStatus(session.sessionContexts, showContextAsCircle);
       if (contextStatus) {
@@ -61,10 +66,10 @@ export class StatusBarManager {
     const loading = !fiveHour && !sevenDay && session.rateLimitsStatus === 'loading';
 
     if (fiveHour) {
-      parts.push(`5h: ${displayPercent(fiveHour.usedPercent)}%`);
+      parts.push(`5h: ${displayPercent(fiveHour.usedPercent).toFixed(0)}%`);
     }
     if (sevenDay) {
-      parts.push(`7d: ${displayPercent(sevenDay.usedPercent)}%`);
+      parts.push(`7d: ${displayPercent(sevenDay.usedPercent).toFixed(0)}%`);
     }
     if (loading) {
       parts.push('5h: …', '7d: …');
@@ -95,7 +100,8 @@ export class StatusBarManager {
       );
     }
 
-    this.statusBarItem.text = `$(claude-icon)  ${parts.join(' | ')}`;
+    const icon = showContextAsCircle && contextStatusAvailable(session) ? '' : '$(claude-icon)  ';
+    this.statusBarItem.text = `${icon}${parts.join(' | ')}`;
 
     // Colour on consumed usage, regardless of whether context is displayed as used or available.
     const contextPercent = session.sessionContexts[0]?.contextPercent;
@@ -249,14 +255,13 @@ export function formatContextStatus(
   }
 
   const used = clampPercent(context.contextPercent);
-  return showCircle ? `$(claude-context-${Math.round(used)})` : `${used.toFixed(0)}%`;
+  const circlePercent = Math.round(used / 5) * 5;
+  return showCircle ? `$(claude-context-${circlePercent})` : `${used.toFixed(0)}%`;
 }
 
-function displayPercent(usedPercent: number): string {
-  const config = vscode.workspace.getConfiguration('claudeStatusBar');
-  const available = config.get<boolean>('showAvailablePercentage', false);
-  const used = clampPercent(usedPercent);
-  return (available ? 100 - used : used).toFixed(0);
+function contextStatusAvailable(session: SessionMetrics): boolean {
+  const context = session.sessionContexts[0];
+  return context?.contextPercent !== undefined && Number.isFinite(context.contextPercent);
 }
 
 function clampPercent(value: number): number {
