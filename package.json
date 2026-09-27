@@ -111,10 +111,15 @@
           "default": false,
           "description": "Show the current (or last active) Claude Code session context usage in the status bar"
         },
-        "claudeStatusBar.showAvailableContext": {
+        "claudeStatusBar.showAvailablePercentage": {
           "type": "boolean",
           "default": false,
-          "description": "Show remaining context percentage instead of consumed context percentage in the status bar"
+          "description": "Show remaining percentage instead of consumed percentage for context, 5-hour/7-day usage, and configured budgets"
+        },
+        "claudeStatusBar.showContextAsCircle": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show the current context percentage with a circular indicator in the status bar"
         },
         "claudeStatusBar.showProjectName": {
           "type": "boolean",
