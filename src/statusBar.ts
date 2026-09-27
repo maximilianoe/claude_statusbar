@@ -266,10 +266,6 @@ export function formatContextStatus(
   return showCircle ? `$(claude-context-${circlePercent})` : `${displayed.toFixed(0)}%`;
 }
 
-function contextStatusAvailable(session: SessionMetrics): boolean {
-  const context = session.sessionContexts[0];
-  return context?.contextPercent !== undefined && Number.isFinite(context.contextPercent);
-}
 
 /** Why there are no 5-hour / weekly figures, in one line */
 function limitsStateText(session: SessionMetrics): string {
