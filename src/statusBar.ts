@@ -255,7 +255,7 @@ export function formatContextStatus(
   }
 
   const used = clampPercent(context.contextPercent);
-  const circlePercent = Math.round(used / 10) * 10;
+  const circlePercent = Math.round(used / 5) * 5;
   return showCircle ? `$(claude-context-${circlePercent})` : `${used.toFixed(0)}%`;
 }
 
