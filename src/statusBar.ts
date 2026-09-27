@@ -9,7 +9,7 @@ import { budgetPercent } from './plans';
  *
  * Two display modes:
  *  - Bridge active (real data from Claude Code):
- *      Reset: HH:MM:SS | Ctx: 42% used | 5h: 23% | 7d: 41% | C: $12.56
+ *      Reset: HH:MM:SS | Ctx: 42% | 5h: 23% | 7d: 41% | C: $12.56
  *  - Estimates only:
  *      Reset: HH:MM:SS | C: $12.56 | T: 65.5k | M: 255
  *    (with "/budget" and a percentage appended for whichever budgets are set)
