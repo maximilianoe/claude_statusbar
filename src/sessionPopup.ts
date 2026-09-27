@@ -211,12 +211,11 @@ function renderLimitTile(
   percent: number | undefined,
   sub: string,
   /** Prefixes the value with ~ - the number is ours, not Claude Code's */
-  approximate = false,
-  invert = false
+  approximate = false
 ): string {
   const known = percent !== undefined;
   const usedPercent = known ? Math.max(0, Math.min(percent, 100)) : 0;
-  const displayPercent = invert ? 100 - usedPercent : usedPercent;
+  const displayPercent = usageDisplayPercent(usedPercent);
   const color = known ? getStatusColor(usedPercent) : 'var(--vscode-descriptionForeground)';
   const value = known ? `${approximate ? '~' : ''}${Math.round(displayPercent)}%` : '—';
   const width = known ? displayPercent : 0;
@@ -266,7 +265,7 @@ function ageLabel(updatedAt: Date): string {
  * one Claude Code reported. Sessions running in the VS Code extension are always
  * in that state: it renders no status line, so nothing feeds the bridge.
  */
-function renderSessionContexts(session: SessionMetrics, showAvailablePercentage = false): string {
+function renderSessionContexts(session: SessionMetrics): string {
   const rows = session.sessionContexts || [];
   if (rows.length === 0) {
     return '';
@@ -276,14 +275,14 @@ function renderSessionContexts(session: SessionMetrics, showAvailablePercentage 
     .map((row) => {
       const known = typeof row.contextPercent === 'number';
       const usedPercent = known ? Math.max(0, Math.min(row.contextPercent as number, 100)) : 0;
-      const percent = showAvailablePercentage ? 100 - usedPercent : usedPercent;
+      const percent = usageDisplayPercent(usedPercent);
       const color = known ? getStatusColor(usedPercent) : 'transparent';
       const rowId = `sess-${row.sessionId.replace(/[^\w-]/g, '')}`;
       return `
             <div class="session-row">
                 <div class="session-row-head">
                     <span class="session-row-name" title="${escapeHtml(sessionTooltip(row))}">${escapeHtml(row.label)}</span>
-                    <span class="session-row-meta" id="${rowId}-meta">${percentLabel(row, showAvailablePercentage)} · ${ageLabel(row.updatedAt)}</span>
+                    <span class="session-row-meta" id="${rowId}-meta">${percentLabel(row)} · ${ageLabel(row.updatedAt)}</span>
                 </div>
                 <div class="session-row-bar"><div class="session-row-fill" id="${rowId}-fill" style="width: ${percent}%; background-color: ${color};"></div></div>
             </div>`;
@@ -298,12 +297,12 @@ function renderSessionContexts(session: SessionMetrics, showAvailablePercentage 
 }
 
 /** "47%" / "~47%" / "—" */
-function percentLabel(row: SessionContextInfo, showAvailablePercentage = false): string {
+function percentLabel(row: SessionContextInfo): string {
   if (typeof row.contextPercent !== 'number') {
     return '—';
   }
   const used = Math.max(0, Math.min(row.contextPercent, 100));
-  const percent = showAvailablePercentage ? 100 - used : used;
+  const percent = usageDisplayPercent(used);
   return `${row.estimated ? '~' : ''}${Math.round(percent)}%`;
 }
 
@@ -332,7 +331,7 @@ function contextCaption(rows: SessionContextInfo[], index: number): string {
 }
 
 /** The three tiles shown once Claude Code reports usage */
-function renderLimitTiles(session: SessionMetrics, showAvailablePercentage = false): string {
+function renderLimitTiles(session: SessionMetrics): string {
   const fiveHour = session.rateLimits?.fiveHour;
   const sevenDay = session.rateLimits?.sevenDay;
 
@@ -345,11 +344,11 @@ function renderLimitTiles(session: SessionMetrics, showAvailablePercentage = fal
 
   return `
         <div class="limit-tiles">
-            ${renderLimitTile('ctx', 'Context', context, contextCaption(rows, 0), Boolean(first?.estimated), showAvailablePercentage)}
-            ${renderLimitTile('five-hour', '5-hour window', fiveHour?.usedPercent, resetCaption(fiveHour, false), false, showAvailablePercentage)}
-            ${renderLimitTile('seven-day', '7-day window', sevenDay?.usedPercent, resetCaption(sevenDay, true), false, showAvailablePercentage)}
+            ${renderLimitTile('ctx', 'Context', context, contextCaption(rows, 0), Boolean(first?.estimated))}
+            ${renderLimitTile('five-hour', '5-hour window', fiveHour?.usedPercent, resetCaption(fiveHour, false))}
+            ${renderLimitTile('seven-day', '7-day window', sevenDay?.usedPercent, resetCaption(sevenDay, true))}
         </div>
-        ${renderSessionContexts(session, showAvailablePercentage)}`;
+        ${renderSessionContexts(session)}`;
 }
 
 /**
@@ -363,7 +362,7 @@ function renderLimitTiles(session: SessionMetrics, showAvailablePercentage = fal
  *            API key / Bedrock / Vertex login (no such windows exist at all) or
  *            simply no model response yet in this session
  */
-function renderLimitsSection(session: SessionMetrics, showAvailablePercentage = false): string {
+function renderLimitsSection(session: SessionMetrics): string {
   const fiveHour = session.rateLimits?.fiveHour;
   const sevenDay = session.rateLimits?.sevenDay;
   const hasSessions = (session.sessionContexts || []).length > 0;
@@ -374,7 +373,7 @@ function renderLimitsSection(session: SessionMetrics, showAvailablePercentage = 
         <h2>Usage Limits</h2>
         <div class="collapse-toggle" style="cursor: default;">reported by Claude Code${freshnessSuffix(session)}</div>
     </div>
-    <div class="metric-section">${renderLimitTiles(session, showAvailablePercentage)}${renderStaleWarning(session)}
+    <div class="metric-section">${renderLimitTiles(session)}${renderStaleWarning(session)}
     </div>`;
   }
 
