@@ -71,6 +71,226 @@
           "fontPath": "./resources/Glyphter.woff",
           "fontCharacter": "\\005E"
         }
+      },
+      "claude-context-0": {
+        "description": "Claude context ring at 0 percent consumed",
+        "default": {
+          "fontPath": "./resources/claude-context-ring.woff",
+          "fontCharacter": "\\E100"
+        }
+      },
+      "claude-context-5": {
+        "description": "Claude context ring at 5 percent consumed",
+        "default": {
+          "fontPath": "./resources/claude-context-ring.woff",
+          "fontCharacter": "\\E101"
+        }
+      },
+      "claude-context-10": {
+        "description": "Claude context ring at 10 percent consumed",
+        "default": {
+          "fontPath": "./resources/claude-context-ring.woff",
+          "fontCharacter": "\\E102"
+        }
+      },
+      "claude-context-15": {
+        "description": "Claude context ring at 15 percent consumed",
+        "default": {
+          "fontPath": "./resources/claude-context-ring.woff",
+          "fontCharacter": "\\E103"
+        }
+      },
+      "claude-context-20": {
+        "description": "Claude context ring at 20 percent consumed",
+        "default": {
+          "fontPath": "./resources/claude-context-ring.woff",
+          "fontCharacter": "\\E104"
+        }
+      },
+      "claude-context-25": {
+        "description": "Claude context ring at 25 percent consumed",
+        "default": {
+          "fontPath": "./resources/claude-context-ring.woff",
+          "fontCharacter": "\\E105"
+        }
+      },
+      "claude-context-30": {
+        "description": "Claude context ring at 30 percent consumed",
+        "default": {
+          "fontPath": "./resources/claude-context-ring.woff",
+          "fontCharacter": "\\E106"
+        }
+      },
+      "claude-context-35": {
+        "description": "Claude context ring at 35 percent consumed",
+        "default": {
+          "fontPath": "./resources/claude-context-ring.woff",
+          "fontCharacter": "\\E107"
+        }
+      },
+      "claude-context-40": {
+        "description": "Claude context ring at 40 percent consumed",
+        "default": {
+          "fontPath": "./resources/claude-context-ring.woff",
+          "fontCharacter": "\\E108"
+        }
+      },
+      "claude-context-45": {
+        "description": "Claude context ring at 45 percent consumed",
+        "default": {
+          "fontPath": "./resources/claude-context-ring.woff",
+          "fontCharacter": "\\E109"
+        }
+      },
+      "claude-context-50": {
+        "description": "Claude context ring at 50 percent consumed",
+        "default": {
+          "fontPath": "./resources/claude-context-ring.woff",
+          "fontCharacter": "\\E10A"
+        }
+      },
+      "claude-context-55": {
+        "description": "Claude context ring at 55 percent consumed",
+        "default": {
+          "fontPath": "./resources/claude-context-ring.woff",
+          "fontCharacter": "\\E10B"
+        }
+      },
+      "claude-context-60": {
+        "description": "Claude context ring at 60 percent consumed",
+        "default": {
+          "fontPath": "./resources/claude-context-ring.woff",
+          "fontCharacter": "\\E10C"
+        }
+      },
+      "claude-context-65": {
+        "description": "Claude context ring at 65 percent consumed",
+        "default": {
+          "fontPath": "./resources/claude-context-ring.woff",
+          "fontCharacter": "\\E10D"
+        }
+      },
+      "claude-context-70": {
+        "description": "Claude context ring at 70 percent consumed",
+        "default": {
+          "fontPath": "./resources/claude-context-ring.woff",
+          "fontCharacter": "\\E10E"
+        }
+      },
+      "claude-context-75": {
+        "description": "Claude context ring at 75 percent consumed",
+        "default": {
+          "fontPath": "./resources/claude-context-ring.woff",
+          "fontCharacter": "\\E10F"
+        }
+      },
+      "claude-context-80": {
+        "description": "Claude context ring at 80 percent consumed",
+        "default": {
+          "fontPath": "./resources/claude-context-ring.woff",
+          "fontCharacter": "\\E110"
+        }
+      },
+      "claude-context-85": {
+        "description": "Claude context ring at 85 percent consumed",
+        "default": {
+          "fontPath": "./resources/claude-context-ring.woff",
+          "fontCharacter": "\\E111"
+        }
+      },
+      "claude-context-90": {
+        "description": "Claude context ring at 90 percent consumed",
+        "default": {
+          "fontPath": "./resources/claude-context-ring.woff",
+          "fontCharacter": "\\E112"
+        }
+      },
+      "claude-context-95": {
+        "description": "Claude context ring at 95 percent consumed",
+        "default": {
+          "fontPath": "./resources/claude-context-ring.woff",
+          "fontCharacter": "\\E113"
+        }
+      },
+      "claude-context-100": {
+        "description": "Claude context ring at 100 percent consumed",
+        "default": {
+          "fontPath": "./resources/claude-context-ring.woff",
+          "fontCharacter": "\\E114"
+        }
+      }
+e": "claude-statusbar",
+  "displayName": "Claude Code Status Bar Monitor",
+  "description": "Claude Code usage in your VS Code status bar: real 5-hour and weekly limits, accurate cost, tokens and context per session",
+  "version": "0.5.3",
+  "publisher": "bartosz-warzocha",
+  "icon": "resources/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bartoszwarzocha/claude_statusbar.git"
+  },
+  "bugs": {
+    "url": "https://github.com/bartoszwarzocha/claude_statusbar/issues"
+  },
+  "homepage": "https://github.com/bartoszwarzocha/claude_statusbar#readme",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.104.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "claude",
+    "anthropic",
+    "ai",
+    "usage",
+    "monitor",
+    "tokens",
+    "cost",
+    "status bar",
+    "tracking",
+    "rate limits",
+    "context window"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "claude-statusbar.showDetails",
+        "title": "Claude: Show Usage Details"
+      },
+      {
+        "command": "claude-statusbar.setBudgets",
+        "title": "Claude: Set Budgets"
+      },
+      {
+        "command": "claude-statusbar.refresh",
+        "title": "Claude: Refresh Usage Stats"
+      },
+      {
+        "command": "claude-statusbar.enableRealLimits",
+        "title": "Claude: Enable Real Usage Limits"
+      },
+      {
+        "command": "claude-statusbar.disableRealLimits",
+        "title": "Claude: Disable Real Usage Limits"
+      },
+      {
+        "command": "claude-statusbar.showLimitsStatus",
+        "title": "Claude: Show Usage Limits Bridge Status"
+      }
+    ],
+    "icons": {
+      "claude-icon": {
+        "description": "Claude AI icon",
+        "default": {
+          "fontPath": "./resources/Glyphter.woff",
+          "fontCharacter": "\\005E"
+        }
       }
     },
     "configuration": {
