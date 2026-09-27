@@ -9,10 +9,14 @@ import { budgetPercent } from './plans';
  * An empty string is deliberate: a placeholder character next to a bar that can
  * never fill just adds noise.
  */
-function formatPercent(percent: number | undefined, showAvailable = false): string {
-  if (percent === undefined) return '';
-  const display = showAvailable ? 100 - Math.max(0, Math.min(percent, 100)) : Math.max(0, Math.min(percent, 100));
-  return `${display.toFixed(1)}%`;
+function displayPercent(usedPercent: number): number {
+  const used = Math.max(0, Math.min(usedPercent, 100));
+  const showRemaining = vscode.workspace.getConfiguration('claudeStatusBar').get<boolean>('showRemainingPercentage', false);
+  return showRemaining ? 100 - used : used;
+}
+
+function formatPercent(percent: number | undefined): string {
+  return percent === undefined ? '' : `${displayPercent(percent).toFixed(1)}%`;
 }
 
 /**
@@ -395,7 +399,7 @@ function renderLimitsSection(session: SessionMetrics): string {
         <h2>Usage Limits</h2>
         <div class="collapse-toggle" style="cursor: default;">${caption}</div>
     </div>
-    <div class="metric-section">${hasSessions ? renderLimitTiles(session, showAvailablePercentage) : ''}
+    <div class="metric-section">${hasSessions ? renderLimitTiles(session) : ''}
         ${hint}
     </div>`;
 }
@@ -622,7 +626,7 @@ export class SessionPopupPanel {
    */
   private layoutKey(session: SessionMetrics, planConfig: PlanConfig): string {
     const status = session.rateLimitsStatus;
-    const showAvailablePercentage = vscode.workspace.getConfiguration('claudeStatusBar').get<boolean>('showAvailablePercentage', false);
+    const showRemainingPercentage = vscode.workspace.getConfiguration('claudeStatusBar').get<boolean>('showRemainingPercentage', false);
     const hasAnyWindow = Boolean(session.rateLimits?.fiveHour || session.rateLimits?.sevenDay);
     // Whether each metric renders a progress bar or a composition bar is baked
     // into the markup, so a budget appearing or disappearing needs a re-render.
@@ -639,7 +643,7 @@ export class SessionPopupPanel {
     // markup, not values, so they cannot change through postMessage.
     const updatedAt = session.rateLimits?.updatedAt;
     const stale = Boolean(updatedAt && Date.now() - updatedAt.getTime() >= STALE_THRESHOLD_MS);
-    return `${status}|${hasAnyWindow}|${budgets}|${sessions}|${stale}|${showAvailablePercentage}|${session.rateLimitsNote ?? ''}`;
+    return `${status}|${hasAnyWindow}|${budgets}|${sessions}|${stale}|${showRemainingPercentage}|${session.rateLimitsNote ?? ''}`;
   }
 
   /**
@@ -680,7 +684,7 @@ export class SessionPopupPanel {
     const costPercent = budgetPercent(session.totalCost, session.costLimit);
     const messagePercent = budgetPercent(session.messageCount, session.messageLimit);
 
-    const showAvailablePercentage = vscode.workspace.getConfiguration('claudeStatusBar').get<boolean>('showAvailablePercentage', false);
+    const showRemainingPercentage = vscode.workspace.getConfiguration('claudeStatusBar').get<boolean>('showRemainingPercentage', false);
     const tokenColor = getStatusColor(tokenPercent ?? 0);
     const costColor = getStatusColor(costPercent ?? 0);
     const messageColor = getStatusColor(messagePercent ?? 0);
@@ -1329,7 +1333,7 @@ export class SessionPopupPanel {
                     : '<strong>' + current + '</strong>' + unitStr;
             }
             // No budget -> no percentage and no bar, rather than an empty track
-            const displayPercent = percent === null ? null : (showAvailablePercentage ? 100 - Math.max(0, Math.min(percent, 100)) : Math.max(0, Math.min(percent, 100)));
+            const displayPercent = percent === null ? null : (showRemainingPercentage ? 100 - Math.max(0, Math.min(percent, 100)) : Math.max(0, Math.min(percent, 100)));
             const percentStr = displayPercent === null ? '' : displayPercent.toFixed(1) + '%';
             if (percentElem) {
                 percentElem.innerHTML = percentStr ? '<strong>' + percentStr + '</strong>' : '';
@@ -1423,11 +1427,11 @@ export class SessionPopupPanel {
             return pct >= 80 ? '#ff6b6b' : pct >= 60 ? '#ffd93d' : '#51cf66';
         }
 
-        const showAvailablePercentage = ${showAvailablePercentage};
+        const showRemainingPercentage = ${showRemainingPercentage};
 
         function displayPercent(usedPercent) {
             const used = Math.max(0, Math.min(usedPercent, 100));
-            return showAvailablePercentage ? 100 - used : used;
+            return showRemainingPercentage ? 100 - used : used;
         }
 
         // Update one tile. A null/undefined percent means "not reported": the tile
@@ -1767,11 +1771,11 @@ ${limitsSection}
         <div class="progress-container${containerClass(tokenPercent)}" id="token-container">
             <div class="progress-label">
                 <span id="token-label"><strong>${session.totalTokens.toLocaleString()}</strong>${planConfig.tokenLimit ? ` / ${planConfig.tokenLimit.toLocaleString()}` : ''} tokens</span>
-                <span id="token-percent"><strong>${formatPercent(tokenPercent, showAvailablePercentage)}</strong></span>
+                <span id="token-percent"><strong>${formatPercent(tokenPercent)}</strong></span>
             </div>
             <div class="progress-bar" id="token-bar"${barVisibility(tokenPercent)}>
-                <div class="progress-fill" id="token-fill" style="width: ${Math.min(showAvailablePercentage && tokenPercent !== undefined ? 100 - Math.max(0, Math.min(tokenPercent, 100)) : tokenPercent ?? 0, 100)}%; background-color: ${tokenColor};">
-                    <span id="token-fill-text">${formatPercent(tokenPercent, showAvailablePercentage)}</span>
+                <div class="progress-fill" id="token-fill" style="width: ${(tokenPercent === undefined ? 0 : displayPercent(tokenPercent))}%; background-color: ${tokenColor};">
+                    <span id="token-fill-text">${formatPercent(tokenPercent)}</span>
                 </div>
             </div>${tokenPercent === undefined ? renderCompositionBar('token', tokenSegments(session)) : ''}
         </div>
@@ -1819,11 +1823,11 @@ ${limitsSection}
         <div class="progress-container${containerClass(costPercent)}" id="cost-container">
             <div class="progress-label">
                 <span id="cost-label"><strong>${formatCost(session.totalCost)}</strong>${session.costLimit ? ` / ${formatCost(session.costLimit)}` : ''}</span>
-                <span id="cost-percent"><strong>${formatPercent(costPercent, showAvailablePercentage)}</strong></span>
+                <span id="cost-percent"><strong>${formatPercent(costPercent)}</strong></span>
             </div>
             <div class="progress-bar" id="cost-bar"${barVisibility(costPercent)}>
-                <div class="progress-fill" id="cost-fill" style="width: ${Math.min(showAvailablePercentage && costPercent !== undefined ? 100 - Math.max(0, Math.min(costPercent, 100)) : costPercent ?? 0, 100)}%; background-color: ${costColor};">
-                    <span id="cost-fill-text">${formatPercent(costPercent, showAvailablePercentage)}</span>
+                <div class="progress-fill" id="cost-fill" style="width: ${(costPercent === undefined ? 0 : displayPercent(costPercent))}%; background-color: ${costColor};">
+                    <span id="cost-fill-text">${formatPercent(costPercent)}</span>
                 </div>
             </div>${costPercent === undefined ? renderCompositionBar('cost', costSegments(session)) : ''}
         </div>
@@ -1851,11 +1855,11 @@ ${limitsSection}
         <div class="progress-container${containerClass(messagePercent)}" id="message-container">
             <div class="progress-label">
                 <span id="message-label"><strong>${session.messageCount}</strong>${session.messageLimit ? ` / ${session.messageLimit}` : ''} messages</span>
-                <span id="message-percent"><strong>${formatPercent(messagePercent, showAvailablePercentage)}</strong></span>
+                <span id="message-percent"><strong>${formatPercent(messagePercent)}</strong></span>
             </div>
             <div class="progress-bar" id="message-bar"${barVisibility(messagePercent)}>
-                <div class="progress-fill" id="message-fill" style="width: ${Math.min(showAvailablePercentage && messagePercent !== undefined ? 100 - Math.max(0, Math.min(messagePercent, 100)) : messagePercent ?? 0, 100)}%; background-color: ${messageColor};">
-                    <span id="message-fill-text">${formatPercent(messagePercent, showAvailablePercentage)}</span>
+                <div class="progress-fill" id="message-fill" style="width: ${(messagePercent === undefined ? 0 : displayPercent(messagePercent))}%; background-color: ${messageColor};">
+                    <span id="message-fill-text">${formatPercent(messagePercent)}</span>
                 </div>
             </div>${messagePercent === undefined ? renderCompositionBar('message', messageSegments(session)) : ''}
         </div>
