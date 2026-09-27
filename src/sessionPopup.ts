@@ -1768,7 +1768,7 @@ ${limitsSection}
             </div>
             <div class="progress-bar" id="token-bar"${barVisibility(tokenPercent)}>
                 <div class="progress-fill" id="token-fill" style="width: ${Math.min(showAvailablePercentage && tokenPercent !== undefined ? 100 - Math.max(0, Math.min(tokenPercent, 100)) : tokenPercent ?? 0, 100)}%; background-color: ${tokenColor};">
-                    <span id="token-fill-text">${formatPercent(tokenPercent)}</span>
+                    <span id="token-fill-text">${formatPercent(tokenPercent, showAvailablePercentage)}</span>
                 </div>
             </div>${tokenPercent === undefined ? renderCompositionBar('token', tokenSegments(session)) : ''}
         </div>
@@ -1820,7 +1820,7 @@ ${limitsSection}
             </div>
             <div class="progress-bar" id="cost-bar"${barVisibility(costPercent)}>
                 <div class="progress-fill" id="cost-fill" style="width: ${Math.min(showAvailablePercentage && costPercent !== undefined ? 100 - Math.max(0, Math.min(costPercent, 100)) : costPercent ?? 0, 100)}%; background-color: ${costColor};">
-                    <span id="cost-fill-text">${formatPercent(costPercent)}</span>
+                    <span id="cost-fill-text">${formatPercent(costPercent, showAvailablePercentage)}</span>
                 </div>
             </div>${costPercent === undefined ? renderCompositionBar('cost', costSegments(session)) : ''}
         </div>
@@ -1852,7 +1852,7 @@ ${limitsSection}
             </div>
             <div class="progress-bar" id="message-bar"${barVisibility(messagePercent)}>
                 <div class="progress-fill" id="message-fill" style="width: ${Math.min(showAvailablePercentage && messagePercent !== undefined ? 100 - Math.max(0, Math.min(messagePercent, 100)) : messagePercent ?? 0, 100)}%; background-color: ${messageColor};">
-                    <span id="message-fill-text">${formatPercent(messagePercent)}</span>
+                    <span id="message-fill-text">${formatPercent(messagePercent, showAvailablePercentage)}</span>
                 </div>
             </div>${messagePercent === undefined ? renderCompositionBar('message', messageSegments(session)) : ''}
         </div>
