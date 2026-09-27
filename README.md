@@ -27,7 +27,7 @@ Reset: 02:13:20 | C: $31.34 | T: 139.9k | M: 70     API key: no limits exist
 ```
 
 **Status Bar Components:**
-- **Ctx** — context usage for the newest active session; optional and off by default. A `~` marks transcript-derived estimates. Set `showRemainingPercentage` to show remaining percentage instead. This setting also applies to 5h/7d usage and configured token/cost/message budgets. `showContextAsCircle` adds a circular progress glyph to the context value.
+- **Ctx** — context usage for the newest active session; optional and off by default. A `~` marks transcript-derived estimates. Set `showRemainingPercentage` to show remaining percentage instead. This setting also applies to 5h/7d usage and configured token/cost/message budgets. `showContextAsCircle` replaces the Ctx percentage with a circular progress indicator; the ring always shows consumed context and ignores `showRemainingPercentage`.
 - **Reset** — countdown to the session reset (HH:MM:SS)
 - **5h** / **7d** — percentage of the real 5-hour and weekly limits used, or remaining when `showRemainingPercentage` is enabled (see [Real usage limits](#real-usage-limits))
 - **C** — session cost, with `/budget` and a percentage if you set one
