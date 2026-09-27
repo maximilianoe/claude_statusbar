@@ -44,10 +44,12 @@ export class StatusBarManager {
     const parts: string[] = [`Reset: ${timeRemaining}`];
 
     const config = vscode.workspace.getConfiguration('claudeStatusBar');
+    const showAvailablePercentage = config.get<boolean>('showAvailablePercentage', false);
     if (config.get<boolean>('showContextInStatusBar', false)) {
       const contextStatus = formatContextStatus(
         session.sessionContexts,
-        config.get<boolean>('showAvailableContext', false)
+        showAvailablePercentage,
+        config.get<boolean>('showContextAsCircle', false)
       );
       if (contextStatus) {
         parts.push(`Ctx: ${contextStatus}`);
@@ -63,10 +65,10 @@ export class StatusBarManager {
     const loading = !fiveHour && !sevenDay && session.rateLimitsStatus === 'loading';
 
     if (fiveHour) {
-      parts.push(`5h: ${fiveHour.usedPercent.toFixed(0)}%`);
+      parts.push(`5h: ${formatUsagePercent(fiveHour.usedPercent, showAvailablePercentage)}%`);
     }
     if (sevenDay) {
-      parts.push(`7d: ${sevenDay.usedPercent.toFixed(0)}%`);
+      parts.push(`7d: ${formatUsagePercent(sevenDay.usedPercent, showAvailablePercentage)}%`);
     }
     if (loading) {
       parts.push('5h: …', '7d: …');
@@ -243,7 +245,8 @@ export class StatusBarManager {
 /** Format the newest session context for the status bar. */
 export function formatContextStatus(
   contexts: SessionMetrics['sessionContexts'],
-  showAvailable: boolean
+  showAvailable: boolean,
+  showCircle = false
 ): string | undefined {
   const context = contexts[0];
   if (!context || context.contextPercent === undefined || !Number.isFinite(context.contextPercent)) {
@@ -251,10 +254,24 @@ export function formatContextStatus(
   }
 
   const used = clampPercent(context.contextPercent);
+  const display = formatUsagePercent(used, showAvailable);
   const marker = context.estimated ? '~' : '';
-  return showAvailable
-    ? `${marker}${(100 - used).toFixed(0)}% available`
-    : `${marker}${used.toFixed(0)}% used`;
+  return showCircle
+    ? `${contextCircleGlyph(display)} ${marker}${display}%`
+    : `${marker}${display}%`;
+}
+
+function formatUsagePercent(usedPercent: number, showAvailable: boolean, decimals = 0): string {
+  const displayPercent = showAvailable ? 100 - clampPercent(usedPercent) : clampPercent(usedPercent);
+  return displayPercent.toFixed(decimals);
+}
+
+function contextCircleGlyph(displayPercent: number): string {
+  if (displayPercent < 12.5) return '○';
+  if (displayPercent < 37.5) return '◔';
+  if (displayPercent < 62.5) return '◑';
+  if (displayPercent < 87.5) return '◕';
+  return '●';
 }
 
 function clampPercent(value: number): number {
