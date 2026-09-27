@@ -106,6 +106,16 @@
           "default": true,
           "description": "Show notification when session timer reaches zero"
         },
+        "claudeStatusBar.showContextInStatusBar": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show the current (or last active) Claude Code session context usage in the status bar"
+        },
+        "claudeStatusBar.showAvailableContext": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show remaining context percentage instead of consumed context percentage in the status bar"
+        },
         "claudeStatusBar.showProjectName": {
           "type": "boolean",
           "default": false,
