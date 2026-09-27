@@ -9,7 +9,7 @@ import { budgetPercent } from './plans';
  *
  * Two display modes:
  *  - Bridge active (real data from Claude Code):
- *      Reset: HH:MM:SS | 5h: 23% | 7d: 41% | C: $12.56
+ *      Reset: HH:MM:SS | Ctx: 42% used | 5h: 23% | 7d: 41% | C: $12.56
  *  - Estimates only:
  *      Reset: HH:MM:SS | C: $12.56 | T: 65.5k | M: 255
  *    (with "/budget" and a percentage appended for whichever budgets are set)
@@ -42,6 +42,17 @@ export class StatusBarManager {
       : '00:00:00';
 
     const parts: string[] = [`Reset: ${timeRemaining}`];
+
+    const config = vscode.workspace.getConfiguration('claudeStatusBar');
+    if (config.get<boolean>('showContextInStatusBar', false)) {
+      const contextStatus = formatContextStatus(
+        session.sessionContexts,
+        config.get<boolean>('showAvailableContext', false)
+      );
+      if (contextStatus) {
+        parts.push(`Ctx: ${contextStatus}`);
+      }
+    }
 
     const fiveHour = session.rateLimits?.fiveHour;
     const sevenDay = session.rateLimits?.sevenDay;
@@ -115,6 +126,17 @@ export class StatusBarManager {
    */
   public updateTooltip(session: SessionMetrics, planConfig: PlanConfig) {
     const lines: string[] = ['**Claude Code Statistics**', ''];
+
+    const currentContext = session.sessionContexts[0];
+    if (currentContext?.contextPercent !== undefined && Number.isFinite(currentContext.contextPercent)) {
+      const used = clampPercent(currentContext.contextPercent);
+      const marker = currentContext.estimated ? '~' : '';
+      lines.push(
+        '**Current context**',
+        `- ${currentContext.label}: ${marker}${used.toFixed(1)}% used, ${marker}${(100 - used).toFixed(1)}% available`,
+        ''
+      );
+    }
 
     const fiveHour = session.rateLimits?.fiveHour;
     const sevenDay = session.rateLimits?.sevenDay;
@@ -214,6 +236,27 @@ export class StatusBarManager {
   public dispose() {
     this.statusBarItem.dispose();
   }
+}
+
+/** Format the newest session context for the status bar. */
+export function formatContextStatus(
+  contexts: SessionMetrics['sessionContexts'],
+  showAvailable: boolean
+): string | undefined {
+  const context = contexts[0];
+  if (!context || context.contextPercent === undefined || !Number.isFinite(context.contextPercent)) {
+    return undefined;
+  }
+
+  const used = clampPercent(context.contextPercent);
+  const marker = context.estimated ? '~' : '';
+  return showAvailable
+    ? `${marker}${(100 - used).toFixed(0)}% available`
+    : `${marker}${used.toFixed(0)}% used`;
+}
+
+function clampPercent(value: number): number {
+  return Math.max(0, Math.min(100, value));
 }
 
 /** Why there are no 5-hour / weekly figures, in one line */
