@@ -1440,21 +1440,17 @@ export class SessionPopupPanel {
 
             const known = typeof percent === 'number';
             const usedPercent = known ? Math.max(0, Math.min(percent, 100)) : 0;
-            const displayPercent = displayPercentValue(usedPercent);
+            const display = displayPercent(usedPercent);
             const color = known ? limitColor(usedPercent) : 'var(--vscode-descriptionForeground)';
 
-            valueElem.textContent = known ? (approximate ? '~' : '') + Math.round(displayPercent) + '%' : '—';
+            valueElem.textContent = known ? (approximate ? '~' : '') + Math.round(display) + '%' : '—';
             valueElem.style.color = color;
-            fillElem.style.width = displayPercent + '%';
+            fillElem.style.width = display + '%';
             fillElem.style.backgroundColor = known ? color : 'transparent';
             if (subElem && sub) { subElem.textContent = sub; }
         }
 
-        function displayPercentValue(usedPercent) {
-            return displayPercent(usedPercent);
-        }
-
-        function resetCaption(window, withDate) {
+                function resetCaption(window, withDate) {
             if (!window) { return 'not reported'; }
             const d = new Date(window.resetsAt);
             const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
