@@ -219,7 +219,7 @@ function renderLimitTile(
 ): string {
   const known = percent !== undefined;
   const usedPercent = known ? Math.max(0, Math.min(percent, 100)) : 0;
-  const displayPercent = usageDisplayPercent(usedPercent);
+  const displayPercent = displayPercent(usedPercent);
   const color = known ? getStatusColor(usedPercent) : 'var(--vscode-descriptionForeground)';
   const value = known ? `${approximate ? '~' : ''}${Math.round(displayPercent)}%` : '—';
   const width = known ? displayPercent : 0;
@@ -279,7 +279,7 @@ function renderSessionContexts(session: SessionMetrics): string {
     .map((row) => {
       const known = typeof row.contextPercent === 'number';
       const usedPercent = known ? Math.max(0, Math.min(row.contextPercent as number, 100)) : 0;
-      const percent = usageDisplayPercent(usedPercent);
+      const percent = displayPercent(usedPercent);
       const color = known ? getStatusColor(usedPercent) : 'transparent';
       const rowId = `sess-${row.sessionId.replace(/[^\w-]/g, '')}`;
       return `
@@ -306,7 +306,7 @@ function percentLabel(row: SessionContextInfo): string {
     return '—';
   }
   const used = Math.max(0, Math.min(row.contextPercent, 100));
-  const percent = usageDisplayPercent(used);
+  const percent = displayPercent(used);
   return `${row.estimated ? '~' : ''}${Math.round(percent)}%`;
 }
 
