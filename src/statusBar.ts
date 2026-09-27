@@ -44,15 +44,11 @@ export class StatusBarManager {
     const parts: string[] = [`Reset: ${timeRemaining}`];
 
     const config = vscode.workspace.getConfiguration('claudeStatusBar');
-    const showAvailablePercentage = config.get<boolean>('showAvailablePercentage', false);
-    if (config.get<boolean>('showContextInStatusBar', false) || config.get<boolean>('showContextAsCircle', false)) {
-      const contextStatus = formatContextStatus(
-        session.sessionContexts,
-        showAvailablePercentage,
-        config.get<boolean>('showContextAsCircle', false)
-      );
+    const showContextAsCircle = config.get<boolean>('showContextAsCircle', false);
+    if (config.get<boolean>('showContextInStatusBar', false)) {
+      const contextStatus = formatContextStatus(session.sessionContexts, showContextAsCircle);
       if (contextStatus) {
-        parts.push(`Ctx: ${contextStatus}`);
+        parts.push(showContextAsCircle ? contextStatus : `Ctx: ${contextStatus}`);
       }
     }
 
@@ -65,10 +61,10 @@ export class StatusBarManager {
     const loading = !fiveHour && !sevenDay && session.rateLimitsStatus === 'loading';
 
     if (fiveHour) {
-      parts.push(`5h: ${formatUsagePercent(fiveHour.usedPercent, showAvailablePercentage)}%`);
+      parts.push(`5h: ${displayPercent(fiveHour.usedPercent)}%`);
     }
     if (sevenDay) {
-      parts.push(`7d: ${formatUsagePercent(sevenDay.usedPercent, showAvailablePercentage)}%`);
+      parts.push(`7d: ${displayPercent(sevenDay.usedPercent)}%`);
     }
     if (loading) {
       parts.push('5h: …', '7d: …');
@@ -103,7 +99,7 @@ export class StatusBarManager {
 
     // Colour on consumed usage, regardless of whether context is displayed as used or available.
     const contextPercent = session.sessionContexts[0]?.contextPercent;
-    const showContext = config.get<boolean>('showContextInStatusBar', false) || config.get<boolean>('showContextAsCircle', false);
+    const showContext = config.get<boolean>('showContextInStatusBar', false);
     const severityPercent = Math.max(
       fiveHour?.usedPercent ?? -1,
       sevenDay?.usedPercent ?? -1,
@@ -245,7 +241,6 @@ export class StatusBarManager {
 /** Format the newest session context for the status bar. */
 export function formatContextStatus(
   contexts: SessionMetrics['sessionContexts'],
-  showAvailable: boolean,
   showCircle = false
 ): string | undefined {
   const context = contexts[0];
@@ -254,24 +249,14 @@ export function formatContextStatus(
   }
 
   const used = clampPercent(context.contextPercent);
-  const display = formatUsagePercent(used, showAvailable);
-  const marker = context.estimated ? '~' : '';
-  return showCircle
-    ? `${contextCircleGlyph(display)} ${marker}${display}%`
-    : `${marker}${display}%`;
+  return showCircle ? `$(claude-context-${Math.round(used)})` : `${used.toFixed(0)}%`;
 }
 
-function formatUsagePercent(usedPercent: number, showAvailable: boolean, decimals = 0): string {
-  const displayPercent = showAvailable ? 100 - clampPercent(usedPercent) : clampPercent(usedPercent);
-  return displayPercent.toFixed(decimals);
-}
-
-function contextCircleGlyph(displayPercent: number): string {
-  if (displayPercent < 12.5) return '○';
-  if (displayPercent < 37.5) return '◔';
-  if (displayPercent < 62.5) return '◑';
-  if (displayPercent < 87.5) return '◕';
-  return '●';
+function displayPercent(usedPercent: number): string {
+  const config = vscode.workspace.getConfiguration('claudeStatusBar');
+  const available = config.get<boolean>('showAvailablePercentage', false);
+  const used = clampPercent(usedPercent);
+  return (available ? 100 - used : used).toFixed(0);
 }
 
 function clampPercent(value: number): number {
