@@ -3,18 +3,13 @@ import { SessionMetrics, PlanConfig, RateLimitWindow, SessionContextInfo } from 
 import { formatTimeRemaining, getStatusColor } from './sessionCalculator';
 import { formatCost } from './pricing';
 import { budgetPercent } from './plans';
+import { displayPercent } from './percentage';
 
 /**
  * Render "23.5%", or nothing at all when there is no budget to measure against.
  * An empty string is deliberate: a placeholder character next to a bar that can
  * never fill just adds noise.
  */
-function displayPercent(usedPercent: number): number {
-  const used = Math.max(0, Math.min(usedPercent, 100));
-  const showRemaining = vscode.workspace.getConfiguration('claudeStatusBar').get<boolean>('showRemainingPercentage', false);
-  return showRemaining ? 100 - used : used;
-}
-
 function formatPercent(percent: number | undefined): string {
   return percent === undefined ? '' : `${displayPercent(percent).toFixed(1)}%`;
 }
@@ -1333,8 +1328,8 @@ export class SessionPopupPanel {
                     : '<strong>' + current + '</strong>' + unitStr;
             }
             // No budget -> no percentage and no bar, rather than an empty track
-            const displayPercent = percent === null ? null : (showRemainingPercentage ? 100 - Math.max(0, Math.min(percent, 100)) : Math.max(0, Math.min(percent, 100)));
-            const percentStr = displayPercent === null ? '' : displayPercent.toFixed(1) + '%';
+            const display = percent === null ? null : displayPercent(percent);
+            const percentStr = display === null ? '' : display.toFixed(1) + '%';
             if (percentElem) {
                 percentElem.innerHTML = percentStr ? '<strong>' + percentStr + '</strong>' : '';
             }
@@ -1347,7 +1342,7 @@ export class SessionPopupPanel {
                 containerElem.classList.toggle('no-bar', percent === null);
             }
             if (fillElem) {
-                fillElem.style.width = Math.min(displayPercent ?? 0, 100) + '%';
+                fillElem.style.width = Math.min(display ?? 0, 100) + '%';
             }
             if (textElem) {
                 textElem.textContent = percentStr;
