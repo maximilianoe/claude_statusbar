@@ -100,7 +100,7 @@ export class StatusBarManager {
       );
     }
 
-    const icon = showContextAsCircle && contextStatusAvailable(session) ? '' : '$(claude-icon)  ';
+    const icon = showContextAsCircle && config.get<boolean>('showContextInStatusBar', false) && contextStatusAvailable(session) ? '' : '$(claude-icon)  ';
     this.statusBarItem.text = `${icon}${parts.join(' | ')}`;
 
     // Colour on consumed usage, regardless of whether context is displayed as used or available.
