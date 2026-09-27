@@ -73,6 +73,7 @@ export class StatusBarManager {
 
     // Cost is always shown - it is computed from real token counts and prices
     const costPercent = budgetPercent(session.totalCost, session.costLimit);
+    const displayedCostPercent = costPercent === undefined ? undefined : displayPercent(costPercent);
     parts.push(
       costPercent === undefined
         ? `C: ${formatCost(session.totalCost)}`
@@ -82,17 +83,19 @@ export class StatusBarManager {
     // Without real rate limit data, fall back to token/message counters
     if (!fiveHour && !sevenDay && !loading) {
       const tokenPercent = budgetPercent(session.totalTokens, planConfig.tokenLimit);
+      const displayedTokenPercent = tokenPercent === undefined ? undefined : displayPercent(tokenPercent);
       parts.push(
         tokenPercent === undefined
           ? `T: ${formatCompact(session.totalTokens)}`
-          : `T: ${tokenPercent.toFixed(1)}%`
+          : `T: ${displayedTokenPercent!.toFixed(1)}%`
       );
 
       const messagePercent = budgetPercent(session.messageCount, session.messageLimit);
+      const displayedMessagePercent = messagePercent === undefined ? undefined : displayPercent(messagePercent);
       parts.push(
         messagePercent === undefined
           ? `M: ${session.messageCount}`
-          : `M: ${messagePercent.toFixed(1)}%`
+          : `M: ${displayedMessagePercent!.toFixed(1)}%`
       );
     }
 
