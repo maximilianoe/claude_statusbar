@@ -51,9 +51,10 @@ Click the status bar to open the statistics panel.
 
 **Session Timer** — countdown to the reset, with the window's start and end times.
 
-**Usage Limits** — three tiles with the real percentage consumed of the context
-window, the 5-hour window and the weekly window, each with its reset time, plus a
-per-session context list. See [Real usage limits](#real-usage-limits).
+**Usage Limits** — three tiles with the real percentage consumed (or remaining
+when `showAvailablePercentage` is enabled) for the context window, the 5-hour
+window and the weekly window, each with its reset time, plus a per-session context
+list. See [Real usage limits](#real-usage-limits).
 
 **Token Usage, Cost Usage, Message Count** — each section shows one bar:
 - a **progress bar** with a percentage, when you have set a budget for that metric
