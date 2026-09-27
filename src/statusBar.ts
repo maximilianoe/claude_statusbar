@@ -136,6 +136,9 @@ export class StatusBarManager {
       lines.push(
         '**Current context**',
         `- ${currentContext.label}: ${marker}${used.toFixed(1)}% used, ${marker}${(100 - used).toFixed(1)}% available`,
+        currentContext.contextTokens !== undefined && currentContext.contextWindowSize !== undefined
+          ? `- ${currentContext.contextTokens.toLocaleString()} / ${currentContext.contextWindowSize.toLocaleString()} tokens in context`
+          : '',
         ''
       );
     }
@@ -250,7 +253,7 @@ export function formatContextStatus(
     return undefined;
   }
 
-  const used = displayPercent(context.contextPercent, false);
+  const used = displayPercent(context.contextPercent);
   const circlePercent = Math.round(used / 5) * 5;
   return showCircle ? `$(claude-context-${circlePercent})` : `${used.toFixed(0)}%`;
 }
