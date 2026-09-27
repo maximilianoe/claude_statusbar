@@ -131,7 +131,7 @@ export class StatusBarManager {
 
     const currentContext = session.sessionContexts[0];
     if (currentContext?.contextPercent !== undefined && Number.isFinite(currentContext.contextPercent)) {
-      const used = displayPercent(currentContext.contextPercent, false);
+      const used = displayPercent(currentContext.contextPercent);
       const marker = currentContext.estimated ? '~' : '';
       lines.push(
         '**Current context**',
