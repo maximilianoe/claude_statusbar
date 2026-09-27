@@ -44,11 +44,11 @@ export class StatusBarManager {
     const parts: string[] = [`Reset: ${timeRemaining}`];
 
     const config = vscode.workspace.getConfiguration('claudeStatusBar');
-    const showAvailablePercentage = config.get<boolean>('showAvailablePercentage', false);
+    const showRemainingPercentage = config.get<boolean>('showRemainingPercentage', false);
     const showContextAsCircle = config.get<boolean>('showContextAsCircle', false);
     const displayPercent = (usedPercent: number) => {
       const used = clampPercent(usedPercent);
-      return showAvailablePercentage ? 100 - used : used;
+      return showRemainingPercentage ? 100 - used : used;
     };
     if (config.get<boolean>('showContextInStatusBar', false)) {
       const contextStatus = formatContextStatus(session.sessionContexts, showContextAsCircle);
@@ -255,7 +255,7 @@ export function formatContextStatus(
   }
 
   const used = clampPercent(context.contextPercent);
-  const circlePercent = Math.round(used / 5) * 5;
+  const circlePercent = Math.round(used / 10) * 10;
   return showCircle ? `$(claude-context-${circlePercent})` : `${used.toFixed(0)}%`;
 }
 
