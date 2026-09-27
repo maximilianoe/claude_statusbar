@@ -141,8 +141,8 @@ export class StatusBarManager {
       const marker = currentContext.estimated ? '~' : '';
       lines.push(
         currentContext.title
-          ? `**Current context (${currentContext.label})**\n- ${currentContext.title}: ${marker}${used.toFixed(1)}% used, ${marker}${(100 - used).toFixed(1)}% available`
-          : `**Current context (${currentContext.label})**\n- ${marker}${used.toFixed(1)}% used, ${marker}${(100 - used).toFixed(1)}% available`,
+          ? `**Current context** (${currentContext.label})\n- ${currentContext.title}: ${marker}${used.toFixed(1)}% used, ${marker}${(100 - used).toFixed(1)}% available`
+          : `**Current context** (${currentContext.label})\n- ${marker}${used.toFixed(1)}% used, ${marker}${(100 - used).toFixed(1)}% available`,
         currentContext.contextTokens !== undefined && currentContext.contextWindowSize !== undefined
           ? `- ${currentContext.contextTokens.toLocaleString()} / ${currentContext.contextWindowSize.toLocaleString()} tokens in context`
           : '',
