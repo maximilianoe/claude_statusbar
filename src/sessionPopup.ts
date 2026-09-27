@@ -692,7 +692,7 @@ export class SessionPopupPanel {
     const elapsedTime = totalSessionTime - session.timeRemaining;
     const timePercent = Math.min((elapsedTime / totalSessionTime) * 100, 100);
 
-    const limitsSection = renderLimitsSection(session, showAvailablePercentage);
+    const limitsSection = renderLimitsSection(session);
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -1425,9 +1425,14 @@ export class SessionPopupPanel {
 
         const showAvailablePercentage = ${showAvailablePercentage};
 
+        function displayPercent(usedPercent) {
+            const used = Math.max(0, Math.min(usedPercent, 100));
+            return showAvailablePercentage ? 100 - used : used;
+        }
+
         // Update one tile. A null/undefined percent means "not reported": the tile
         // stays in place showing a dash so the grid keeps its three columns.
-        function updateLimitTile(id, percent, sub, approximate, invert) {
+        function updateLimitTile(id, percent, sub, approximate) {
             const valueElem = document.getElementById(id + '-value');
             const fillElem = document.getElementById(id + '-fill');
             const subElem = document.getElementById(id + '-sub');
@@ -1435,7 +1440,7 @@ export class SessionPopupPanel {
 
             const known = typeof percent === 'number';
             const usedPercent = known ? Math.max(0, Math.min(percent, 100)) : 0;
-            const displayPercent = invert ? 100 - usedPercent : usedPercent;
+            const displayPercent = displayPercentValue(usedPercent);
             const color = known ? limitColor(usedPercent) : 'var(--vscode-descriptionForeground)';
 
             valueElem.textContent = known ? (approximate ? '~' : '') + Math.round(displayPercent) + '%' : '—';
@@ -1443,6 +1448,10 @@ export class SessionPopupPanel {
             fillElem.style.width = displayPercent + '%';
             fillElem.style.backgroundColor = known ? color : 'transparent';
             if (subElem && sub) { subElem.textContent = sub; }
+        }
+
+        function displayPercentValue(usedPercent) {
+            return displayPercent(usedPercent);
         }
 
         function resetCaption(window, withDate) {
@@ -1469,12 +1478,12 @@ export class SessionPopupPanel {
                 const known = typeof row.contextPercent === 'number';
                 const meta = document.getElementById(id + '-meta');
                 if (meta) {
-                    meta.textContent = percentLabel(row, showAvailablePercentage) + ' · ' + ageLabel(row.updatedAt);
+                    meta.textContent = percentLabel(row) + ' · ' + ageLabel(row.updatedAt);
                 }
                 const fill = document.getElementById(id + '-fill');
                 if (fill) {
                     const used = known ? Math.max(0, Math.min(row.contextPercent, 100)) : 0;
-                    fill.style.width = (showAvailablePercentage ? 100 - used : used) + '%';
+                    fill.style.width = displayPercent(used) + '%';
                     fill.style.backgroundColor = known ? limitColor(used) : 'transparent';
                 }
             }
@@ -1489,10 +1498,10 @@ export class SessionPopupPanel {
         let contextIndex = 0;
         let fallbackContext;
 
-        function percentLabel(row, showAvailable) {
+        function percentLabel(row) {
             if (typeof row.contextPercent !== 'number') { return '—'; }
             const used = Math.max(0, Math.min(row.contextPercent, 100));
-            const percent = showAvailable ? 100 - used : used;
+            const percent = displayPercent(used);
             return (row.estimated ? '~' : '') + Math.round(percent) + '%';
         }
 
@@ -1507,8 +1516,7 @@ export class SessionPopupPanel {
             updateLimitTile('ctx',
                 row ? row.contextPercent : fallbackContext,
                 contextCaption(contextRows, contextIndex),
-                Boolean(row && row.estimated),
-                showAvailablePercentage);
+                Boolean(row && row.estimated));
         }
 
         const CONTEXT_ROTATION_MS = 2000;
@@ -1527,9 +1535,9 @@ export class SessionPopupPanel {
             renderContextTile();
             if (!rateLimits) { return; }
             updateLimitTile('five-hour', rateLimits.fiveHour && rateLimits.fiveHour.usedPercent,
-                resetCaption(rateLimits.fiveHour, false), false, showAvailablePercentage);
+                resetCaption(rateLimits.fiveHour, false), false);
             updateLimitTile('seven-day', rateLimits.sevenDay && rateLimits.sevenDay.usedPercent,
-                resetCaption(rateLimits.sevenDay, true), false, showAvailablePercentage);
+                resetCaption(rateLimits.sevenDay, true), false);
         }
 
         // Generate color from string hash (for projects)
