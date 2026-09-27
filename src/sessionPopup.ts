@@ -209,12 +209,15 @@ function renderLimitTile(
   percent: number | undefined,
   sub: string,
   /** Prefixes the value with ~ - the number is ours, not Claude Code's */
-  approximate = false
+  approximate = false,
+  invert = false
 ): string {
   const known = percent !== undefined;
-  const color = known ? getStatusColor(percent) : 'var(--vscode-descriptionForeground)';
-  const value = known ? `${approximate ? '~' : ''}${Math.round(percent)}%` : '—';
-  const width = known ? Math.min(percent, 100) : 0;
+  const usedPercent = known ? Math.max(0, Math.min(percent, 100)) : 0;
+  const displayPercent = invert ? 100 - usedPercent : usedPercent;
+  const color = known ? getStatusColor(usedPercent) : 'var(--vscode-descriptionForeground)';
+  const value = known ? `${approximate ? '~' : ''}${Math.round(displayPercent)}%` : '—';
+  const width = known ? displayPercent : 0;
 
   return `
             <div class="limit-tile">
@@ -261,7 +264,7 @@ function ageLabel(updatedAt: Date): string {
  * one Claude Code reported. Sessions running in the VS Code extension are always
  * in that state: it renders no status line, so nothing feeds the bridge.
  */
-function renderSessionContexts(session: SessionMetrics): string {
+function renderSessionContexts(session: SessionMetrics, showAvailableContext = false): string {
   const rows = session.sessionContexts || [];
   if (rows.length === 0) {
     return '';
@@ -270,14 +273,15 @@ function renderSessionContexts(session: SessionMetrics): string {
   const items = rows
     .map((row) => {
       const known = typeof row.contextPercent === 'number';
-      const percent = known ? Math.min(row.contextPercent as number, 100) : 0;
-      const color = known ? getStatusColor(row.contextPercent as number) : 'transparent';
+      const usedPercent = known ? Math.max(0, Math.min(row.contextPercent as number, 100)) : 0;
+      const percent = showAvailableContext ? 100 - usedPercent : usedPercent;
+      const color = known ? getStatusColor(usedPercent) : 'transparent';
       const rowId = `sess-${row.sessionId.replace(/[^\w-]/g, '')}`;
       return `
             <div class="session-row">
                 <div class="session-row-head">
                     <span class="session-row-name" title="${escapeHtml(sessionTooltip(row))}">${escapeHtml(row.label)}</span>
-                    <span class="session-row-meta" id="${rowId}-meta">${percentLabel(row)} · ${ageLabel(row.updatedAt)}</span>
+                    <span class="session-row-meta" id="${rowId}-meta">${percentLabel(row, showAvailableContext)} · ${ageLabel(row.updatedAt)}</span>
                 </div>
                 <div class="session-row-bar"><div class="session-row-fill" id="${rowId}-fill" style="width: ${percent}%; background-color: ${color};"></div></div>
             </div>`;
@@ -292,11 +296,13 @@ function renderSessionContexts(session: SessionMetrics): string {
 }
 
 /** "47%" / "~47%" / "—" */
-function percentLabel(row: SessionContextInfo): string {
+function percentLabel(row: SessionContextInfo, showAvailableContext = false): string {
   if (typeof row.contextPercent !== 'number') {
     return '—';
   }
-  return `${row.estimated ? '~' : ''}${Math.round(row.contextPercent)}%`;
+  const used = Math.max(0, Math.min(row.contextPercent, 100));
+  const percent = showAvailableContext ? 100 - used : used;
+  return `${row.estimated ? '~' : ''}${Math.round(percent)}%`;
 }
 
 /** Hover text: the conversation title, plus why a value is only an estimate */
@@ -324,7 +330,7 @@ function contextCaption(rows: SessionContextInfo[], index: number): string {
 }
 
 /** The three tiles shown once Claude Code reports usage */
-function renderLimitTiles(session: SessionMetrics): string {
+function renderLimitTiles(session: SessionMetrics, showAvailableContext = false): string {
   const fiveHour = session.rateLimits?.fiveHour;
   const sevenDay = session.rateLimits?.sevenDay;
 
@@ -337,11 +343,11 @@ function renderLimitTiles(session: SessionMetrics): string {
 
   return `
         <div class="limit-tiles">
-            ${renderLimitTile('ctx', 'Context', context, contextCaption(rows, 0), Boolean(first?.estimated))}
+            ${renderLimitTile('ctx', 'Context', context, contextCaption(rows, 0), Boolean(first?.estimated), showAvailableContext)}
             ${renderLimitTile('five-hour', '5-hour window', fiveHour?.usedPercent, resetCaption(fiveHour, false))}
             ${renderLimitTile('seven-day', '7-day window', sevenDay?.usedPercent, resetCaption(sevenDay, true))}
         </div>
-        ${renderSessionContexts(session)}`;
+        ${renderSessionContexts(session, showAvailableContext)}`;
 }
 
 /**
@@ -355,7 +361,7 @@ function renderLimitTiles(session: SessionMetrics): string {
  *            API key / Bedrock / Vertex login (no such windows exist at all) or
  *            simply no model response yet in this session
  */
-function renderLimitsSection(session: SessionMetrics): string {
+function renderLimitsSection(session: SessionMetrics, showAvailableContext = false): string {
   const fiveHour = session.rateLimits?.fiveHour;
   const sevenDay = session.rateLimits?.sevenDay;
   const hasSessions = (session.sessionContexts || []).length > 0;
@@ -366,7 +372,7 @@ function renderLimitsSection(session: SessionMetrics): string {
         <h2>Usage Limits</h2>
         <div class="collapse-toggle" style="cursor: default;">reported by Claude Code${freshnessSuffix(session)}</div>
     </div>
-    <div class="metric-section">${renderLimitTiles(session)}${renderStaleWarning(session)}
+    <div class="metric-section">${renderLimitTiles(session, showAvailableContext)}${renderStaleWarning(session)}
     </div>`;
   }
 
@@ -388,7 +394,7 @@ function renderLimitsSection(session: SessionMetrics): string {
         <h2>Usage Limits</h2>
         <div class="collapse-toggle" style="cursor: default;">${caption}</div>
     </div>
-    <div class="metric-section">${hasSessions ? renderLimitTiles(session) : ''}
+    <div class="metric-section">${hasSessions ? renderLimitTiles(session, showAvailableContext) : ''}
         ${hint}
     </div>`;
 }
@@ -683,7 +689,8 @@ export class SessionPopupPanel {
     const elapsedTime = totalSessionTime - session.timeRemaining;
     const timePercent = Math.min((elapsedTime / totalSessionTime) * 100, 100);
 
-    const limitsSection = renderLimitsSection(session);
+    const showAvailableContext = vscode.workspace.getConfiguration('claudeStatusBar').get<boolean>('showAvailableContext', false);
+    const limitsSection = renderLimitsSection(session, showAvailableContext);
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -1413,20 +1420,24 @@ export class SessionPopupPanel {
             return pct >= 80 ? '#ff6b6b' : pct >= 60 ? '#ffd93d' : '#51cf66';
         }
 
+        const showAvailableContext = ${showAvailableContext};
+
         // Update one tile. A null/undefined percent means "not reported": the tile
         // stays in place showing a dash so the grid keeps its three columns.
-        function updateLimitTile(id, percent, sub, approximate) {
+        function updateLimitTile(id, percent, sub, approximate, invert) {
             const valueElem = document.getElementById(id + '-value');
             const fillElem = document.getElementById(id + '-fill');
             const subElem = document.getElementById(id + '-sub');
             if (!valueElem || !fillElem) { return; }
 
             const known = typeof percent === 'number';
-            const color = known ? limitColor(percent) : 'var(--vscode-descriptionForeground)';
+            const usedPercent = known ? Math.max(0, Math.min(percent, 100)) : 0;
+            const displayPercent = invert ? 100 - usedPercent : usedPercent;
+            const color = known ? limitColor(usedPercent) : 'var(--vscode-descriptionForeground)';
 
-            valueElem.textContent = known ? (approximate ? '~' : '') + Math.round(percent) + '%' : '—';
+            valueElem.textContent = known ? (approximate ? '~' : '') + Math.round(displayPercent) + '%' : '—';
             valueElem.style.color = color;
-            fillElem.style.width = (known ? Math.min(percent, 100) : 0) + '%';
+            fillElem.style.width = displayPercent + '%';
             fillElem.style.backgroundColor = known ? color : 'transparent';
             if (subElem && sub) { subElem.textContent = sub; }
         }
@@ -1455,12 +1466,13 @@ export class SessionPopupPanel {
                 const known = typeof row.contextPercent === 'number';
                 const meta = document.getElementById(id + '-meta');
                 if (meta) {
-                    meta.textContent = percentLabel(row) + ' · ' + ageLabel(row.updatedAt);
+                    meta.textContent = percentLabel(row, showAvailableContext) + ' · ' + ageLabel(row.updatedAt);
                 }
                 const fill = document.getElementById(id + '-fill');
                 if (fill) {
-                    fill.style.width = (known ? Math.min(row.contextPercent, 100) : 0) + '%';
-                    fill.style.backgroundColor = known ? limitColor(row.contextPercent) : 'transparent';
+                    const used = known ? Math.max(0, Math.min(row.contextPercent, 100)) : 0;
+                    fill.style.width = (showAvailableContext ? 100 - used : used) + '%';
+                    fill.style.backgroundColor = known ? limitColor(used) : 'transparent';
                 }
             }
         }
@@ -1474,9 +1486,11 @@ export class SessionPopupPanel {
         let contextIndex = 0;
         let fallbackContext;
 
-        function percentLabel(row) {
+        function percentLabel(row, showAvailable) {
             if (typeof row.contextPercent !== 'number') { return '—'; }
-            return (row.estimated ? '~' : '') + Math.round(row.contextPercent) + '%';
+            const used = Math.max(0, Math.min(row.contextPercent, 100));
+            const percent = showAvailable ? 100 - used : used;
+            return (row.estimated ? '~' : '') + Math.round(percent) + '%';
         }
 
         function contextCaption(rows, index) {
@@ -1490,7 +1504,8 @@ export class SessionPopupPanel {
             updateLimitTile('ctx',
                 row ? row.contextPercent : fallbackContext,
                 contextCaption(contextRows, contextIndex),
-                Boolean(row && row.estimated));
+                Boolean(row && row.estimated),
+                showAvailableContext);
         }
 
         const CONTEXT_ROTATION_MS = 2000;
