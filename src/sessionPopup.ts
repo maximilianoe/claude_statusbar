@@ -219,10 +219,10 @@ function renderLimitTile(
 ): string {
   const known = percent !== undefined;
   const usedPercent = known ? Math.max(0, Math.min(percent, 100)) : 0;
-  const displayPercent = displayPercent(usedPercent);
+  const display = displayPercent(usedPercent);
   const color = known ? getStatusColor(usedPercent) : 'var(--vscode-descriptionForeground)';
-  const value = known ? `${approximate ? '~' : ''}${Math.round(displayPercent)}%` : '—';
-  const width = known ? displayPercent : 0;
+  const value = known ? `${approximate ? '~' : ''}${Math.round(display)}%` : '—';
+  const width = known ? display : 0;
 
   return `
             <div class="limit-tile">
