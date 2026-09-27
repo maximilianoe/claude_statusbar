@@ -9,8 +9,10 @@ import { budgetPercent } from './plans';
  * An empty string is deliberate: a placeholder character next to a bar that can
  * never fill just adds noise.
  */
-function formatPercent(percent: number | undefined): string {
-  return percent === undefined ? '' : `${percent.toFixed(1)}%`;
+function formatPercent(percent: number | undefined, showAvailable = false): string {
+  if (percent === undefined) return '';
+  const display = showAvailable ? 100 - Math.max(0, Math.min(percent, 100)) : Math.max(0, Math.min(percent, 100));
+  return `${display.toFixed(1)}%`;
 }
 
 /**
@@ -264,7 +266,7 @@ function ageLabel(updatedAt: Date): string {
  * one Claude Code reported. Sessions running in the VS Code extension are always
  * in that state: it renders no status line, so nothing feeds the bridge.
  */
-function renderSessionContexts(session: SessionMetrics, showAvailableContext = false): string {
+function renderSessionContexts(session: SessionMetrics, showAvailablePercentage = false): string {
   const rows = session.sessionContexts || [];
   if (rows.length === 0) {
     return '';
@@ -274,14 +276,14 @@ function renderSessionContexts(session: SessionMetrics, showAvailableContext = f
     .map((row) => {
       const known = typeof row.contextPercent === 'number';
       const usedPercent = known ? Math.max(0, Math.min(row.contextPercent as number, 100)) : 0;
-      const percent = showAvailableContext ? 100 - usedPercent : usedPercent;
+      const percent = showAvailablePercentage ? 100 - usedPercent : usedPercent;
       const color = known ? getStatusColor(usedPercent) : 'transparent';
       const rowId = `sess-${row.sessionId.replace(/[^\w-]/g, '')}`;
       return `
             <div class="session-row">
                 <div class="session-row-head">
                     <span class="session-row-name" title="${escapeHtml(sessionTooltip(row))}">${escapeHtml(row.label)}</span>
-                    <span class="session-row-meta" id="${rowId}-meta">${percentLabel(row, showAvailableContext)} · ${ageLabel(row.updatedAt)}</span>
+                    <span class="session-row-meta" id="${rowId}-meta">${percentLabel(row, showAvailablePercentage)} · ${ageLabel(row.updatedAt)}</span>
                 </div>
                 <div class="session-row-bar"><div class="session-row-fill" id="${rowId}-fill" style="width: ${percent}%; background-color: ${color};"></div></div>
             </div>`;
@@ -296,12 +298,12 @@ function renderSessionContexts(session: SessionMetrics, showAvailableContext = f
 }
 
 /** "47%" / "~47%" / "—" */
-function percentLabel(row: SessionContextInfo, showAvailableContext = false): string {
+function percentLabel(row: SessionContextInfo, showAvailablePercentage = false): string {
   if (typeof row.contextPercent !== 'number') {
     return '—';
   }
   const used = Math.max(0, Math.min(row.contextPercent, 100));
-  const percent = showAvailableContext ? 100 - used : used;
+  const percent = showAvailablePercentage ? 100 - used : used;
   return `${row.estimated ? '~' : ''}${Math.round(percent)}%`;
 }
 
@@ -330,7 +332,7 @@ function contextCaption(rows: SessionContextInfo[], index: number): string {
 }
 
 /** The three tiles shown once Claude Code reports usage */
-function renderLimitTiles(session: SessionMetrics, showAvailableContext = false): string {
+function renderLimitTiles(session: SessionMetrics, showAvailablePercentage = false): string {
   const fiveHour = session.rateLimits?.fiveHour;
   const sevenDay = session.rateLimits?.sevenDay;
 
@@ -343,11 +345,11 @@ function renderLimitTiles(session: SessionMetrics, showAvailableContext = false)
 
   return `
         <div class="limit-tiles">
-            ${renderLimitTile('ctx', 'Context', context, contextCaption(rows, 0), Boolean(first?.estimated), showAvailableContext)}
-            ${renderLimitTile('five-hour', '5-hour window', fiveHour?.usedPercent, resetCaption(fiveHour, false))}
-            ${renderLimitTile('seven-day', '7-day window', sevenDay?.usedPercent, resetCaption(sevenDay, true))}
+            ${renderLimitTile('ctx', 'Context', context, contextCaption(rows, 0), Boolean(first?.estimated), showAvailablePercentage)}
+            ${renderLimitTile('five-hour', '5-hour window', fiveHour?.usedPercent, resetCaption(fiveHour, false), false, showAvailablePercentage)}
+            ${renderLimitTile('seven-day', '7-day window', sevenDay?.usedPercent, resetCaption(sevenDay, true), false, showAvailablePercentage)}
         </div>
-        ${renderSessionContexts(session, showAvailableContext)}`;
+        ${renderSessionContexts(session, showAvailablePercentage)}`;
 }
 
 /**
@@ -361,7 +363,7 @@ function renderLimitTiles(session: SessionMetrics, showAvailableContext = false)
  *            API key / Bedrock / Vertex login (no such windows exist at all) or
  *            simply no model response yet in this session
  */
-function renderLimitsSection(session: SessionMetrics, showAvailableContext = false): string {
+function renderLimitsSection(session: SessionMetrics, showAvailablePercentage = false): string {
   const fiveHour = session.rateLimits?.fiveHour;
   const sevenDay = session.rateLimits?.sevenDay;
   const hasSessions = (session.sessionContexts || []).length > 0;
@@ -372,7 +374,7 @@ function renderLimitsSection(session: SessionMetrics, showAvailableContext = fal
         <h2>Usage Limits</h2>
         <div class="collapse-toggle" style="cursor: default;">reported by Claude Code${freshnessSuffix(session)}</div>
     </div>
-    <div class="metric-section">${renderLimitTiles(session, showAvailableContext)}${renderStaleWarning(session)}
+    <div class="metric-section">${renderLimitTiles(session, showAvailablePercentage)}${renderStaleWarning(session)}
     </div>`;
   }
 
@@ -394,7 +396,7 @@ function renderLimitsSection(session: SessionMetrics, showAvailableContext = fal
         <h2>Usage Limits</h2>
         <div class="collapse-toggle" style="cursor: default;">${caption}</div>
     </div>
-    <div class="metric-section">${hasSessions ? renderLimitTiles(session, showAvailableContext) : ''}
+    <div class="metric-section">${hasSessions ? renderLimitTiles(session, showAvailablePercentage) : ''}
         ${hint}
     </div>`;
 }
@@ -621,6 +623,7 @@ export class SessionPopupPanel {
    */
   private layoutKey(session: SessionMetrics, planConfig: PlanConfig): string {
     const status = session.rateLimitsStatus;
+    const showAvailablePercentage = vscode.workspace.getConfiguration('claudeStatusBar').get<boolean>('showAvailablePercentage', false);
     const hasAnyWindow = Boolean(session.rateLimits?.fiveHour || session.rateLimits?.sevenDay);
     // Whether each metric renders a progress bar or a composition bar is baked
     // into the markup, so a budget appearing or disappearing needs a re-render.
@@ -637,7 +640,7 @@ export class SessionPopupPanel {
     // markup, not values, so they cannot change through postMessage.
     const updatedAt = session.rateLimits?.updatedAt;
     const stale = Boolean(updatedAt && Date.now() - updatedAt.getTime() >= STALE_THRESHOLD_MS);
-    return `${status}|${hasAnyWindow}|${budgets}|${sessions}|${stale}|${session.rateLimitsNote ?? ''}`;
+    return `${status}|${hasAnyWindow}|${budgets}|${sessions}|${stale}|${showAvailablePercentage}|${session.rateLimitsNote ?? ''}`;
   }
 
   /**
@@ -678,6 +681,7 @@ export class SessionPopupPanel {
     const costPercent = budgetPercent(session.totalCost, session.costLimit);
     const messagePercent = budgetPercent(session.messageCount, session.messageLimit);
 
+    const showAvailablePercentage = vscode.workspace.getConfiguration('claudeStatusBar').get<boolean>('showAvailablePercentage', false);
     const tokenColor = getStatusColor(tokenPercent ?? 0);
     const costColor = getStatusColor(costPercent ?? 0);
     const messageColor = getStatusColor(messagePercent ?? 0);
@@ -689,8 +693,7 @@ export class SessionPopupPanel {
     const elapsedTime = totalSessionTime - session.timeRemaining;
     const timePercent = Math.min((elapsedTime / totalSessionTime) * 100, 100);
 
-    const showAvailableContext = vscode.workspace.getConfiguration('claudeStatusBar').get<boolean>('showAvailableContext', false);
-    const limitsSection = renderLimitsSection(session, showAvailableContext);
+    const limitsSection = renderLimitsSection(session, showAvailablePercentage);
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -1327,7 +1330,8 @@ export class SessionPopupPanel {
                     : '<strong>' + current + '</strong>' + unitStr;
             }
             // No budget -> no percentage and no bar, rather than an empty track
-            const percentStr = percent === null ? '' : percent.toFixed(1) + '%';
+            const displayPercent = percent === null ? null : (showAvailablePercentage ? 100 - Math.max(0, Math.min(percent, 100)) : Math.max(0, Math.min(percent, 100)));
+            const percentStr = displayPercent === null ? '' : displayPercent.toFixed(1) + '%';
             if (percentElem) {
                 percentElem.innerHTML = percentStr ? '<strong>' + percentStr + '</strong>' : '';
             }
@@ -1340,7 +1344,7 @@ export class SessionPopupPanel {
                 containerElem.classList.toggle('no-bar', percent === null);
             }
             if (fillElem) {
-                fillElem.style.width = Math.min(percent === null ? 0 : percent, 100) + '%';
+                fillElem.style.width = Math.min(displayPercent ?? 0, 100) + '%';
             }
             if (textElem) {
                 textElem.textContent = percentStr;
@@ -1420,7 +1424,7 @@ export class SessionPopupPanel {
             return pct >= 80 ? '#ff6b6b' : pct >= 60 ? '#ffd93d' : '#51cf66';
         }
 
-        const showAvailableContext = ${showAvailableContext};
+        const showAvailablePercentage = ${showAvailablePercentage};
 
         // Update one tile. A null/undefined percent means "not reported": the tile
         // stays in place showing a dash so the grid keeps its three columns.
@@ -1466,12 +1470,12 @@ export class SessionPopupPanel {
                 const known = typeof row.contextPercent === 'number';
                 const meta = document.getElementById(id + '-meta');
                 if (meta) {
-                    meta.textContent = percentLabel(row, showAvailableContext) + ' · ' + ageLabel(row.updatedAt);
+                    meta.textContent = percentLabel(row, showAvailablePercentage) + ' · ' + ageLabel(row.updatedAt);
                 }
                 const fill = document.getElementById(id + '-fill');
                 if (fill) {
                     const used = known ? Math.max(0, Math.min(row.contextPercent, 100)) : 0;
-                    fill.style.width = (showAvailableContext ? 100 - used : used) + '%';
+                    fill.style.width = (showAvailablePercentage ? 100 - used : used) + '%';
                     fill.style.backgroundColor = known ? limitColor(used) : 'transparent';
                 }
             }
@@ -1505,7 +1509,7 @@ export class SessionPopupPanel {
                 row ? row.contextPercent : fallbackContext,
                 contextCaption(contextRows, contextIndex),
                 Boolean(row && row.estimated),
-                showAvailableContext);
+                showAvailablePercentage);
         }
 
         const CONTEXT_ROTATION_MS = 2000;
@@ -1524,9 +1528,9 @@ export class SessionPopupPanel {
             renderContextTile();
             if (!rateLimits) { return; }
             updateLimitTile('five-hour', rateLimits.fiveHour && rateLimits.fiveHour.usedPercent,
-                resetCaption(rateLimits.fiveHour, false));
+                resetCaption(rateLimits.fiveHour, false), false, showAvailablePercentage);
             updateLimitTile('seven-day', rateLimits.sevenDay && rateLimits.sevenDay.usedPercent,
-                resetCaption(rateLimits.sevenDay, true));
+                resetCaption(rateLimits.sevenDay, true), false, showAvailablePercentage);
         }
 
         // Generate color from string hash (for projects)
@@ -1760,10 +1764,10 @@ ${limitsSection}
         <div class="progress-container${containerClass(tokenPercent)}" id="token-container">
             <div class="progress-label">
                 <span id="token-label"><strong>${session.totalTokens.toLocaleString()}</strong>${planConfig.tokenLimit ? ` / ${planConfig.tokenLimit.toLocaleString()}` : ''} tokens</span>
-                <span id="token-percent"><strong>${formatPercent(tokenPercent)}</strong></span>
+                <span id="token-percent"><strong>${formatPercent(tokenPercent, showAvailablePercentage)}</strong></span>
             </div>
             <div class="progress-bar" id="token-bar"${barVisibility(tokenPercent)}>
-                <div class="progress-fill" id="token-fill" style="width: ${Math.min(tokenPercent ?? 0, 100)}%; background-color: ${tokenColor};">
+                <div class="progress-fill" id="token-fill" style="width: ${Math.min(showAvailablePercentage && tokenPercent !== undefined ? 100 - Math.max(0, Math.min(tokenPercent, 100)) : tokenPercent ?? 0, 100)}%; background-color: ${tokenColor};">
                     <span id="token-fill-text">${formatPercent(tokenPercent)}</span>
                 </div>
             </div>${tokenPercent === undefined ? renderCompositionBar('token', tokenSegments(session)) : ''}
@@ -1812,10 +1816,10 @@ ${limitsSection}
         <div class="progress-container${containerClass(costPercent)}" id="cost-container">
             <div class="progress-label">
                 <span id="cost-label"><strong>${formatCost(session.totalCost)}</strong>${session.costLimit ? ` / ${formatCost(session.costLimit)}` : ''}</span>
-                <span id="cost-percent"><strong>${formatPercent(costPercent)}</strong></span>
+                <span id="cost-percent"><strong>${formatPercent(costPercent, showAvailablePercentage)}</strong></span>
             </div>
             <div class="progress-bar" id="cost-bar"${barVisibility(costPercent)}>
-                <div class="progress-fill" id="cost-fill" style="width: ${Math.min(costPercent ?? 0, 100)}%; background-color: ${costColor};">
+                <div class="progress-fill" id="cost-fill" style="width: ${Math.min(showAvailablePercentage && costPercent !== undefined ? 100 - Math.max(0, Math.min(costPercent, 100)) : costPercent ?? 0, 100)}%; background-color: ${costColor};">
                     <span id="cost-fill-text">${formatPercent(costPercent)}</span>
                 </div>
             </div>${costPercent === undefined ? renderCompositionBar('cost', costSegments(session)) : ''}
@@ -1844,10 +1848,10 @@ ${limitsSection}
         <div class="progress-container${containerClass(messagePercent)}" id="message-container">
             <div class="progress-label">
                 <span id="message-label"><strong>${session.messageCount}</strong>${session.messageLimit ? ` / ${session.messageLimit}` : ''} messages</span>
-                <span id="message-percent"><strong>${formatPercent(messagePercent)}</strong></span>
+                <span id="message-percent"><strong>${formatPercent(messagePercent, showAvailablePercentage)}</strong></span>
             </div>
             <div class="progress-bar" id="message-bar"${barVisibility(messagePercent)}>
-                <div class="progress-fill" id="message-fill" style="width: ${Math.min(messagePercent ?? 0, 100)}%; background-color: ${messageColor};">
+                <div class="progress-fill" id="message-fill" style="width: ${Math.min(showAvailablePercentage && messagePercent !== undefined ? 100 - Math.max(0, Math.min(messagePercent, 100)) : messagePercent ?? 0, 100)}%; background-color: ${messageColor};">
                     <span id="message-fill-text">${formatPercent(messagePercent)}</span>
                 </div>
             </div>${messagePercent === undefined ? renderCompositionBar('message', messageSegments(session)) : ''}
