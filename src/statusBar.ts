@@ -108,7 +108,6 @@ export class StatusBarManager {
 
     // Colour on consumed usage, regardless of whether context is displayed as used or available.
     const contextPercent = session.sessionContexts[0]?.contextPercent;
-    const showContext = config.get<boolean>('showContextInStatusBar', false);
     const severityPercent = Math.max(
       fiveHour?.usedPercent ?? -1,
       sevenDay?.usedPercent ?? -1,
