@@ -27,6 +27,7 @@ Reset: 02:13:20 | C: $31.34 | T: 139.9k | M: 70     API key: no limits exist
 ```
 
 **Status Bar Components:**
+- **Ctx** — context usage for the newest active session; optional and off by default. A `~` marks transcript-derived estimates. Set `showAvailableContext` to show remaining context instead.
 - **Reset** — countdown to the session reset (HH:MM:SS)
 - **5h** / **7d** — percentage of the real 5-hour and weekly limits used (see
   [Real usage limits](#real-usage-limits))
@@ -157,6 +158,8 @@ previous status line.
   "claudeStatusBar.messageBudget": 0,          // your message target; 0 = none
   "claudeStatusBar.refreshInterval": 5,        // 1-60 seconds
   "claudeStatusBar.showProjectName": false,    // project name in the panel header
+  "claudeStatusBar.showContextInStatusBar": false,
+  "claudeStatusBar.showAvailableContext": false,
   "claudeStatusBar.notifications.sessionEnded": true
 }
 ```
