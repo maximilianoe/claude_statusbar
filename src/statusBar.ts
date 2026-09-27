@@ -45,12 +45,14 @@ export class StatusBarManager {
     const parts: string[] = [`Reset: ${timeRemaining}`];
 
     const config = vscode.workspace.getConfiguration('claudeStatusBar');
-        const showContextAsCircle = config.get<boolean>('showContextAsCircle', false);
-    if (config.get<boolean>('showContextInStatusBar', false)) {
-      const contextStatus = formatContextStatus(session.sessionContexts, showContextAsCircle);
-      if (contextStatus) {
-        parts.push(showContextAsCircle ? contextStatus : `Ctx: ${contextStatus}`);
-      }
+    const showContext = config.get<boolean>('showContextInStatusBar', false);
+    const showContextAsCircle = config.get<boolean>('showContextAsCircle', false);
+    const contextStatus = showContext
+      ? formatContextStatus(session.sessionContexts, showContextAsCircle)
+      : undefined;
+
+    if (contextStatus && !showContextAsCircle) {
+      parts.push(`Ctx: ${contextStatus}`);
     }
 
     const fiveHour = session.rateLimits?.fiveHour;
@@ -99,7 +101,9 @@ export class StatusBarManager {
       );
     }
 
-    const icon = showContextAsCircle && config.get<boolean>('showContextInStatusBar', false) && contextStatusAvailable(session) ? '' : '$(claude-icon)  ';
+    const icon = showContextAsCircle && contextStatus
+      ? `${contextStatus}  `
+      : '$(claude-icon)  ';
     this.statusBarItem.text = `${icon}${parts.join(' | ')}`;
 
     // Colour on consumed usage, regardless of whether context is displayed as used or available.
