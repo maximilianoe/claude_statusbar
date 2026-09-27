@@ -131,7 +131,7 @@ export class StatusBarManager {
 
     const currentContext = session.sessionContexts[0];
     if (currentContext?.contextPercent !== undefined && Number.isFinite(currentContext.contextPercent)) {
-      const used = displayPercent(currentContext.contextPercent);
+      const used = displayPercent(currentContext.contextPercent, false);
       const marker = currentContext.estimated ? '~' : '';
       lines.push(
         '**Current context**',
@@ -253,9 +253,10 @@ export function formatContextStatus(
     return undefined;
   }
 
-  const used = displayPercent(context.contextPercent);
+  const used = displayPercent(context.contextPercent, false);
+  const displayed = displayPercent(context.contextPercent);
   const circlePercent = Math.round(used / 5) * 5;
-  return showCircle ? `$(claude-context-${circlePercent})` : `${used.toFixed(0)}%`;
+  return showCircle ? `$(claude-context-${circlePercent})` : `${displayed.toFixed(0)}%`;
 }
 
 function contextStatusAvailable(session: SessionMetrics): boolean {
