@@ -131,7 +131,7 @@ export class StatusBarManager {
 
     const currentContext = session.sessionContexts[0];
     if (currentContext?.contextPercent !== undefined && Number.isFinite(currentContext.contextPercent)) {
-      const used = clampPercent(currentContext.contextPercent);
+      const used = displayPercent(currentContext.contextPercent, false);
       const marker = currentContext.estimated ? '~' : '';
       lines.push(
         '**Current context**',
@@ -250,7 +250,7 @@ export function formatContextStatus(
     return undefined;
   }
 
-  const used = clampPercent(context.contextPercent);
+  const used = displayPercent(context.contextPercent, false);
   const circlePercent = Math.round(used / 5) * 5;
   return showCircle ? `$(claude-context-${circlePercent})` : `${used.toFixed(0)}%`;
 }
@@ -258,10 +258,6 @@ export function formatContextStatus(
 function contextStatusAvailable(session: SessionMetrics): boolean {
   const context = session.sessionContexts[0];
   return context?.contextPercent !== undefined && Number.isFinite(context.contextPercent);
-}
-
-function clampPercent(value: number): number {
-  return Math.max(0, Math.min(100, value));
 }
 
 /** Why there are no 5-hour / weekly figures, in one line */
