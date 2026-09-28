@@ -1468,6 +1468,21 @@ export class SessionPopupPanel {
             return Math.floor(minutes / 60) + ' h ago';
         }
 
+        function sessionDisplayName(row) {
+            return row.title ? row.label + ' — ' + row.title : row.label;
+        }
+
+        function sessionTooltip(row) {
+            const parts = [row.title || row.sessionId];
+            if (row.entrypoint === 'claude-vscode') {
+                parts.push('Running in the VS Code extension, which reports no usage to the bridge.');
+            }
+            if (row.estimated) {
+                parts.push('Context estimated from the transcript.');
+            }
+            return parts.join(' — ');
+        }
+
         // Per-session context rows. The DOM order is fixed by the last render;
         // only values move, so a session overtaking another does not reshuffle
         // the list under the cursor.
