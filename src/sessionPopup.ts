@@ -280,7 +280,7 @@ function renderSessionContexts(session: SessionMetrics): string {
       return `
             <div class="session-row">
                 <div class="session-row-head">
-                    <span class="session-row-name" title="${escapeHtml(sessionTooltip(row))}">${escapeHtml(row.label)}</span>
+                    <span class="session-row-name" id="${rowId}-name" title="${escapeHtml(sessionTooltip(row))}">${escapeHtml(sessionDisplayName(row))}</span>
                     <span class="session-row-meta" id="${rowId}-meta">${percentLabel(row)} · ${ageLabel(row.updatedAt)}</span>
                 </div>
                 <div class="session-row-bar"><div class="session-row-fill" id="${rowId}-fill" style="width: ${percent}%; background-color: ${color};"></div></div>
@@ -293,6 +293,11 @@ function renderSessionContexts(session: SessionMetrics): string {
             <div class="session-list-title">Context per session (${rows.length})</div>
             ${items}
         </div>`;
+}
+
+/** Label plus conversation title for the per-session context list. */
+function sessionDisplayName(row: SessionContextInfo): string {
+  return row.title ? `${row.label} — ${row.title}` : row.label;
 }
 
 /** "47%" / "~47%" / "—" */
@@ -1473,6 +1478,8 @@ export class SessionPopupPanel {
                 const known = typeof row.contextPercent === 'number';
                 const meta = document.getElementById(id + '-meta');
                 if (meta) {
+                    const name = document.getElementById(id + '-name');
+                    if (name) { name.textContent = sessionDisplayName(row); name.title = sessionTooltip(row); }
                     meta.textContent = percentLabel(row) + ' · ' + ageLabel(row.updatedAt);
                 }
                 const fill = document.getElementById(id + '-fill');
