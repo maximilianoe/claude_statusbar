@@ -29,15 +29,20 @@ jobs:
 
           # Keep the ring contour unchanged; shift only the embedded Claude logo.
           for glyph in glyf.glyphs.values():
-              if glyph.numberOfContours > 1:
-                  end_points = glyph.endPtsOfContours
+              if glyph.isComposite():
+                  continue
+              coords, end_points, flags = glyph.getCoordinates(glyf)
+              if len(end_points) > 1:
                   start = 0
                   for contour_index, end in enumerate(end_points):
                       if contour_index >= 1:
                           for point_index in range(start, end + 1):
-                              p = glyph.coordinates[point_index]
-                              glyph.coordinates[point_index] = (p[0] - 5, p[1] - 5)
+                              p = coords[point_index]
+                              coords[point_index] = (p[0] - 5, p[1] - 5)
                       start = end + 1
+                  glyph.coordinates = coords
+                  glyph.endPtsOfContours = end_points
+                  glyph.flags = flags
 
           font.save(path)
           PY
