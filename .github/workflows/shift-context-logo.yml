@@ -1,0 +1,57 @@
+name: Shift context logo
+
+on:
+  push:
+    paths:
+      - '.github/workflows/shift-context-logo.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  shift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Shift Claude logo
+        run: |
+          pip install fonttools
+          python - <<'PY'
+          from fontTools.ttLib import TTFont
+          from pathlib import Path
+
+          path = Path("resources/claude-context-ring.woff")
+          font = TTFont(path)
+          glyf = font["glyf"]
+
+          for glyph in glyf.glyphs.values():
+              glyph.expand(glyf)
+              if glyph.isComposite():
+                  continue
+              coords, end_points, flags = glyph.getCoordinates(glyf)
+              if len(end_points) > 1:
+                  start = 0
+                  for contour_index, end in enumerate(end_points):
+                      if contour_index >= 1:
+                          for point_index in range(start, end + 1):
+                              p = coords[point_index]
+                              coords[point_index] = (p[0] - 5, p[1] - 5)
+                      start = end + 1
+                  glyph.coordinates = coords
+                  glyph.endPtsOfContours = end_points
+                  glyph.flags = flags
+
+          font.save(path)
+          PY
+      - name: Remove temporary workflow
+        run: rm .github/workflows/shift-context-logo.yml
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add resources/claude-context-ring.woff .github/workflows/shift-context-logo.yml
+          git commit -m "shift Claude logo to x390 y490"
+          git push
