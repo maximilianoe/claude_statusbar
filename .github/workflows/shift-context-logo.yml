@@ -29,6 +29,7 @@ jobs:
 
           # Keep the ring contour unchanged; shift only the embedded Claude logo.
           for glyph in glyf.glyphs.values():
+              glyph.expand(glyf)
               if glyph.isComposite():
                   continue
               coords, end_points, flags = glyph.getCoordinates(glyf)
