@@ -102,7 +102,7 @@ export class StatusBarManager {
     }
 
     const icon = showContextAsCircle && contextStatus
-      ? `$(claude-icon)${contextStatus}`
+      ? contextStatus
       : '$(claude-icon)  ';
     this.statusBarItem.text = `${icon}${parts.join(' | ')}`;
 
