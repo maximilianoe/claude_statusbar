@@ -162,12 +162,12 @@ export class StatusBarManager {
       lines.push(`**Usage limits** _(reported by Claude Code${asOf})_`);
       if (fiveHour) {
         lines.push(
-          `- 5-hour: ${fiveHour.usedPercent.toFixed(1)}% used, resets ${fiveHour.resetsAt.toLocaleTimeString()}`
+          `- 5-hour: ${fiveHour.usedPercent.toFixed(1)}% used, ${(100 - fiveHour.usedPercent).toFixed(1)}% remaining, resets ${fiveHour.resetsAt.toLocaleTimeString()}`
         );
       }
       if (sevenDay) {
         lines.push(
-          `- 7-day: ${sevenDay.usedPercent.toFixed(1)}% used, resets ${sevenDay.resetsAt.toLocaleString()}`
+          `- 7-day: ${sevenDay.usedPercent.toFixed(1)}% used, ${(100 - sevenDay.usedPercent).toFixed(1)}% remaining, resets ${sevenDay.resetsAt.toLocaleString()}`
         );
       }
       if (asOf && session.rateLimitsNote) {
